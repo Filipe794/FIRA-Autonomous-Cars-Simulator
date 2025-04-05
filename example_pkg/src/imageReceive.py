@@ -25,7 +25,7 @@ def record_video():
     # Definição do vídeo
     frame_width = 640
     frame_height = 480
-    fps = 20
+    fps = 30
     fourcc = cv2.VideoWriter_fourcc(*'MJPG')  # Codec de vídeo
     out = cv2.VideoWriter('output.avi', fourcc, fps, (frame_width, frame_height))
 

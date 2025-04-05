@@ -121,7 +121,7 @@ while cap.isOpened():
 
     # Pressionar 'q' para sair
     # if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+        # break
 
 cap.release()
 out.release()
