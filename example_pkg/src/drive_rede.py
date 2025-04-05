@@ -2,9 +2,9 @@
 import rospy
 from geometry_msgs.msg import Twist
 import processamento_angulo.lane_detection as ldm
-import camera
+import example_pkg.src.simulator_camera as simulator_camera
 import processamento_angulo.utils as utils
-import imageReceive
+import example_pkg.src.video as video
 import cv2
 import example_pkg.src.rede_neural.test_model as model
 
@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
         while not rospy.is_shutdown():  # 🔹 Usa a condição correta do ROS
             # Receber frame da câmera do ROS
-            frame = camera.get_frame_receiver()
+            frame = simulator_camera.get_frame_receiver()
             
             if frame is not None:
                 # mask = model.segmentation(frame)

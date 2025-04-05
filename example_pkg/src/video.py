@@ -18,8 +18,8 @@ def get_latest_frame():
     global latest_frame
     return latest_frame  # Retorna o último frame recebido
 
-def record_video():
-    rospy.init_node("receiveImage", anonymous=True)  # Inicializa o nó ROS
+def record_video(video_name):
+    rospy.init_node("videos/{}".format(video_name), anonymous=True)  # Inicializa o nó ROS
     receive()  # Começa a escutar o tópico
 
     # Definição do vídeo
@@ -46,5 +46,18 @@ def record_video():
     out.release()  # Libera o arquivo de vídeo
     cv2.destroyAllWindows()
 
-if __name__ == "__main__":
-    record_video()
+def display_video(video_path):
+    capture = cv2.VideoCapture(video_path)
+
+    if not capture.isOpened():
+        print("Erro ao acessar camera")
+    else:
+        while capture.isOpened():
+            ret, frame = capture.read()
+            if ret is True:
+                cv2.imshow('Original', frame)
+                
+                if cv2.waitKey(20) & 0xFF == ord('q'):
+                    break
+                
+            else: break

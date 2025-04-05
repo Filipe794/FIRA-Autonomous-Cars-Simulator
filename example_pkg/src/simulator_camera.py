@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-import imageReceive
+import example_pkg.src.video as video
 
 def get_frames(video_path):
     cap = cv2.VideoCapture(video_path)
@@ -17,6 +17,6 @@ def get_frames(video_path):
     return frames
 
 def get_frame_receiver():
-    imageReceive.receive()
-    frame = imageReceive.get_latest_frame()
+    video.receive()
+    frame = video.get_latest_frame()
     return frame
