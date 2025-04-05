@@ -3,14 +3,12 @@ import numpy as np
 from ultralytics import YOLO
 
 # Carregar o modelo YOLO de segmentação (YOLOv8-Seg)
-model = YOLO("/home/filipe/catkin_ws/src/FIRA-Autonomous-Cars-Simulator/example_pkg/src/rede_neural/best.pt")  # Use um modelo treinado para segmentação
+model = YOLO("example_pkg/src/rede_neural/best.pt")
 
 
 def segmentation(frame):
-    
     frame = cv2.resize(frame, (900, 750))
    
-    
     # adaptar para o espaço
     frames = (frame.copy())[400:,:]
 
@@ -30,9 +28,6 @@ def segmentation(frame):
 
     # Criar um kernel para operação morfológica (fechamento)
     kernel = np.ones((4, 4), np.uint8)
-
-    # Aplicar fechamento morfológico para preencher os espaços pretos dentro da máscara
-    # mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
 
     # Aplicar fechamento morfológico para preencher os espaços pretos dentro da máscara
     return cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)

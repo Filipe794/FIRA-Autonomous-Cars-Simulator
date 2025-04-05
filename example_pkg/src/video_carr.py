@@ -66,10 +66,10 @@ import numpy as np
 from ultralytics import YOLO
 
 # Carregar o modelo YOLO de segmentação
-model = YOLO("/home/filipe/catkin_ws/src/FIRA-Autonomous-Cars-Simulator/example_pkg/src/rede_neural/best.pt")
+model = YOLO("example_pkg/src/rede_neural/best.pt")
 
 # Carregar o vídeo
-video_path = "/home/filipe/catkin_ws/src/FIRA-Autonomous-Cars-Simulator/example_pkg/src/output.mp4"  # Altere para o caminho do seu vídeo
+video_path = "example_pkg/src/output.mp4"  # Altere para o caminho do seu vídeo
 cap = cv2.VideoCapture(video_path)
 
 # Obter FPS e tamanho do vídeo para salvar o resultado
