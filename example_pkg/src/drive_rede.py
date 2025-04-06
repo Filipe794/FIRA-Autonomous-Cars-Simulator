@@ -2,9 +2,8 @@
 import rospy
 from geometry_msgs.msg import Twist
 import processamento_angulo.lane_detection as ldm
-import simulator_camera
 import processamento_angulo.utils as utils
-import video as video
+import camera_control as camera_control
 import cv2
 import rede_neural.segmentacao as model
 
@@ -31,23 +30,33 @@ def drive(img, velocity_publisher):
     return curve
 
 if __name__ == "__main__":
-    try:
-        rospy.init_node("drive_control", anonymous=True)  # 🔹 Inicializa o nó antes de usar Rate
-        velocity_publisher = rospy.Publisher('/catvehicle/cmd_vel_safe', Twist, queue_size=20)
-        rate = rospy.Rate(10)  # 🔹 Agora `rospy.init_node()` já foi chamado
+    rospy.init_node('driver_node', anonymous=True)
+    controller = camera_control.CatvehicleController()
 
-        while not rospy.is_shutdown():  # 🔹 Usa a condição correta do ROS
-            # Receber frame da câmera do ROS
-            frame = simulator_camera.get_frame_receiver()
-            
-            if frame is not None:
-                # mask = model.draw_segmented_area(frame)
-                # mask = cv2.cvtColor(mask,cv2.COLOR_GRAY2BGR)
-                # curve = drive(mask, velocity_publisher)
-                # cv2.putText(mask, str(curve), (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-                # cv2.imshow("win", mask)
-                cv2.imshow("win2", frame)
-                cv2.waitKey(2)
-                
-    except rospy.ROSInterruptException:
-        pass
+    print("=== Direção Inteligente com Controle Manual ===")
+    print("  W: Frente | S: Ré | A: Direita | D: Esquerda")
+    print("  R: Iniciar/Parar gravação | P: Reproduzir vídeo")
+    print("  Q: Sair")
+
+    rate = rospy.Rate(30)
+
+    while not rospy.is_shutdown():
+        frame = controller.latest_frame
+        manual_override = controller.process_keys()
+
+        if manual_override is None:
+            break  # 'q' foi pressionado
+
+        if not manual_override:
+            # Nenhuma tecla de controle foi pressionada → usar direção automática
+            if frame is not None and not controller.playing_video:
+                mask = model.draw_segmented_area(frame)
+                mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+                curve = drive(mask, controller.vel_pub)
+                curve = drive(frame, controller.vel_pub)
+                cv2.putText(frame, str(curve), (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                cv2.imshow("Direcao Automatica", frame)
+
+        rate.sleep()
+
+    cv2.destroyAllWindows()
