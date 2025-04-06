@@ -2,11 +2,11 @@
 import rospy
 from geometry_msgs.msg import Twist
 import processamento_angulo.lane_detection as ldm
-import example_pkg.src.simulator_camera as simulator_camera
+import simulator_camera
 import processamento_angulo.utils as utils
-import example_pkg.src.video as video
+import video as video
 import cv2
-import example_pkg.src.rede_neural.test_model as model
+import rede_neural.segmentacao as model
 
 def convert_range(value, old_min=-100, old_max=100, new_min=-1.0, new_max=1.0):
     return ((value - old_min) / (old_max - old_min)) * (new_max - new_min) + new_min
@@ -25,8 +25,9 @@ def drive(img, velocity_publisher):
     vel_msg = Twist()
     vel_msg.linear.x = 1.0  # Velocidade fixa para teste
     vel_msg.angular.z = converted_data  # Ajuste baseado na curva detectada
-            
     velocity_publisher.publish(vel_msg)
+    
+    return curve
 
 if __name__ == "__main__":
     try:
@@ -39,14 +40,13 @@ if __name__ == "__main__":
             frame = simulator_camera.get_frame_receiver()
             
             if frame is not None:
-                # mask = model.segmentation(frame)
+                mask = model.draw_segmented_area(frame)
                 # mask = cv2.cvtColor(mask,cv2.COLOR_GRAY2BGR)
-                # drive(mask, velocity_publisher)
-                cv2.imshow("win", frame)
-                # cv2.imshow("win2", mask)
+                # curve = drive(mask, velocity_publisher)
+                # cv2.putText(mask, str(curve), (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                cv2.imshow("win", mask)
+                cv2.imshow("win2", frame)
                 cv2.waitKey(2)
                 
-            rate.sleep()
-            
     except rospy.ROSInterruptException:
         pass

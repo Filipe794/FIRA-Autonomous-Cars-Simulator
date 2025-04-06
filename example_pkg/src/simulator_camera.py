@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-import example_pkg.src.video as video
+import video as video
 
 def get_frames(video_path):
     cap = cv2.VideoCapture(video_path)

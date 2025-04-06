@@ -18,8 +18,8 @@ def get_latest_frame():
     global latest_frame
     return latest_frame  # Retorna o último frame recebido
 
-def record_video(video_name):
-    rospy.init_node("videos/{}".format(video_name), anonymous=True)  # Inicializa o nó ROS
+def record_video():
+    rospy.init_node("teste_rede", anonymous=True)  # Inicializa o nó ROS
     receive()  # Começa a escutar o tópico
 
     # Definição do vídeo
@@ -27,7 +27,7 @@ def record_video(video_name):
     frame_height = 480
     fps = 30
     fourcc = cv2.VideoWriter_fourcc(*'MJPG')  # Codec de vídeo
-    out = cv2.VideoWriter('output.avi', fourcc, fps, (frame_width, frame_height))
+    out = cv2.VideoWriter('videos/output.avi', fourcc, fps, (frame_width, frame_height))
 
     print("🎥 Gravando... Pressione 'q' para parar.")
 
@@ -61,3 +61,7 @@ def display_video(video_path):
                     break
                 
             else: break
+
+
+if __name__ == "__main__":
+    display_video('videos/output.avi')
