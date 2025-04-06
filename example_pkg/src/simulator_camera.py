@@ -20,3 +20,8 @@ def get_frame_receiver():
     video.receive()
     frame = video.get_latest_frame()
     return frame
+
+while True:
+    frame = get_frame_receiver()
+    if frame is not None:
+        cv2.imshow("Teste", )

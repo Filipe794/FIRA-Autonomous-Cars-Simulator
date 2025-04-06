@@ -13,6 +13,7 @@ def convert_range(value, old_min=-100, old_max=100, new_min=-1.0, new_max=1.0):
 
 def drive(img, velocity_publisher):
     intialTrackBarVals = [102, 80, 20, 214]
+    # Gera a janela de trackbar
     utils.initializeTrackbars(intialTrackBarVals)
     
     curve = ldm.getLaneCurve(img)
@@ -40,11 +41,11 @@ if __name__ == "__main__":
             frame = simulator_camera.get_frame_receiver()
             
             if frame is not None:
-                mask = model.draw_segmented_area(frame)
+                # mask = model.draw_segmented_area(frame)
                 # mask = cv2.cvtColor(mask,cv2.COLOR_GRAY2BGR)
                 # curve = drive(mask, velocity_publisher)
                 # cv2.putText(mask, str(curve), (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-                cv2.imshow("win", mask)
+                # cv2.imshow("win", mask)
                 cv2.imshow("win2", frame)
                 cv2.waitKey(2)
                 
