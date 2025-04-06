@@ -12,21 +12,17 @@ def convert_range(value, old_min=-100, old_max=100, new_min=-1.0, new_max=1.0):
 
 def drive(img, velocity_publisher):
     intialTrackBarVals = [102, 80, 20, 214]
-    # Gera a janela de trackbar
     utils.initializeTrackbars(intialTrackBarVals)
     
     curve = ldm.getLaneCurve(img)
-    
-    # Convertendo os valores
     converted_data = convert_range(curve)
     print(converted_data)
 
-    # Criando e publicando a mensagem de velocidade
     vel_msg = Twist()
-    vel_msg.linear.x = 1.0  # Velocidade fixa para teste
-    vel_msg.angular.z = converted_data  # Ajuste baseado na curva detectada
+    vel_msg.linear.x = 1.0
+    vel_msg.angular.z = converted_data
     velocity_publisher.publish(vel_msg)
-    
+
     return curve
 
 if __name__ == "__main__":
@@ -36,7 +32,7 @@ if __name__ == "__main__":
     print("=== Direção Inteligente com Controle Manual ===")
     print("  W: Frente | S: Ré | A: Direita | D: Esquerda")
     print("  R: Iniciar/Parar gravação | P: Reproduzir vídeo")
-    print("  Q: Sair")
+    print("  T: Alternar Direção Automática | Q: Sair")
 
     rate = rospy.Rate(30)
 
@@ -45,16 +41,20 @@ if __name__ == "__main__":
         manual_override = controller.process_keys()
 
         if manual_override is None:
-            break  # 'q' foi pressionado
+            break
 
         if not manual_override:
-            # Nenhuma tecla de controle foi pressionada → usar direção automática
             if frame is not None and not controller.playing_video:
-                mask = model.draw_segmented_area(frame)
-                mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
-                curve = drive(mask, controller.vel_pub)
-                curve = drive(frame, controller.vel_pub)
-                cv2.putText(frame, str(curve), (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                # Segmentação com retorno da imagem segmentada
+                mask, seg_image = model.draw_segmented_area(frame)
+                cv2.imshow("Segmented", seg_image)
+                curve = drive(frame, controller.vel_pub)  # Passa o frame original (colorido) para a direção
+
+
+                # Mostrar feedback visual com a curva
+                frame = cv2.resize(frame, (900, 750))
+                cv2.putText(frame, str(round(curve, 2)), (50, 50),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
                 cv2.imshow("Direcao Automatica", frame)
 
         rate.sleep()

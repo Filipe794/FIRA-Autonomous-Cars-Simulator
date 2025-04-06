@@ -5,14 +5,16 @@ from geometry_msgs.msg import Twist
 from cv_bridge import CvBridge
 import cv2
 import os
+import signal
+import sys
 
 class CatvehicleController:
     def __init__(self):
-       
         self.bridge = CvBridge()
         self.latest_frame = None
         self.recording = False
         self.video_writer = None
+        self.last_video_path = None
         
         self.vel_pub = rospy.Publisher('/catvehicle/cmd_vel_safe', Twist, queue_size=10)
         self.image_sub = rospy.Subscriber("/catvehicle/camera_front/image_raw_front", Image, self.image_callback)
@@ -42,7 +44,8 @@ class CatvehicleController:
             self.video_writer = cv2.VideoWriter(video_path, fourcc, self.fps, 
                                                 (self.frame_width, self.frame_height))
             self.recording = True
-            print(f"🎥 Iniciando gravação em {video_path}")
+            self.last_video_path = video_path
+            rospy.loginfo(f"🎥 Iniciando gravação em {video_path}")
 
     def stop_recording(self):
         if self.recording:
@@ -50,59 +53,52 @@ class CatvehicleController:
             if self.video_writer is not None:
                 self.video_writer.release()
                 self.video_writer = None
-            print("🛑 Gravação finalizada.")
+            rospy.loginfo("🛑 Gravação finalizada.")
+
     def process_keys(self):
         key = cv2.waitKey(1) & 0xFF
-        
+        key_pressed = False
+
         # Reset das velocidades
         self.vel_msg.linear.x = 0.0
         self.vel_msg.angular.z = 0.0
 
-        key_pressed = False  # 🔹 Flag para saber se houve controle manual
+        key_map = {
+            ord('w'): (2.0, 0.0),
+            ord('s'): (-2.0, 0.0),
+            ord('a'): (2.0, 1.0),
+            ord('d'): (2.0, -1.0),
+        }
 
-        if key == ord('w'):  # Frente
-            self.vel_msg.linear.x = 2.0
-            self.vel_msg.angular.z = 0.0
+        if key in key_map:
+            self.vel_msg.linear.x, self.vel_msg.angular.z = key_map[key]
             key_pressed = True
-        elif key == ord('s'):  # Ré
-            self.vel_msg.linear.x = -2.0
-            self.vel_msg.angular.z = 0.0
-            key_pressed = True
-        elif key == ord('d'):  # Esquerda
-            self.vel_msg.linear.x = 2.0
-            self.vel_msg.angular.z = -1.0
-            key_pressed = True
-        elif key == ord('a'):  # Direita
-            self.vel_msg.linear.x = 2.0
-            self.vel_msg.angular.z = 1.0
-            key_pressed = True
-
-        elif key == ord('r'):  # Iniciar/Parar gravação
+        elif key == ord('r'):
             if self.recording:
                 self.stop_recording()
             else:
                 self.start_recording()
-        elif key == ord('p'):  # Reproduzir último vídeo
+        elif key == ord('p'):
             self.play_last_video()
         elif key == ord('q'):
-            return None  # 🔻 Sinaliza que é para sair
+            return None
 
-        self.vel_pub.publish(self.vel_msg)
-        return key_pressed  # 🔸 True se houve controle manual, False se não
+        if key_pressed:
+            self.vel_pub.publish(self.vel_msg)
+
+        return key_pressed
 
     def play_last_video(self):
-        video_files = sorted([f for f in os.listdir(self.video_dir) if f.endswith('.avi')])
-        if not video_files:
-            print("Nenhum vídeo encontrado para reproduzir.")
+        if not self.last_video_path or not os.path.exists(self.last_video_path):
+            rospy.logwarn("Nenhum vídeo encontrado para reproduzir.")
             return
 
-        last_video = os.path.join(self.video_dir, video_files[-1])
-        print(f"🎬 Reproduzindo: {last_video}")
+        rospy.loginfo(f"🎬 Reproduzindo: {self.last_video_path}")
         self.playing_video = True
 
-        cap = cv2.VideoCapture(last_video)
+        cap = cv2.VideoCapture(self.last_video_path)
         if not cap.isOpened():
-            print("Erro ao abrir o vídeo.")
+            rospy.logerr("Erro ao abrir o vídeo.")
             self.playing_video = False
             return
 
@@ -118,4 +114,28 @@ class CatvehicleController:
         cap.release()
         cv2.destroyAllWindows()
         self.playing_video = False
-        print("✅ Reprodução finalizada.")
+        rospy.loginfo("✅ Reprodução finalizada.")
+
+def shutdown_handler(sig, frame):
+    print("Encerrando com segurança...")
+    if controller.recording:
+        controller.stop_recording()
+    cv2.destroyAllWindows()
+    sys.exit(0)
+
+if __name__ == '__main__':
+    rospy.init_node('drive_rede_node', anonymous=True)
+    controller = CatvehicleController()
+    signal.signal(signal.SIGINT, shutdown_handler)
+
+    while not rospy.is_shutdown():
+        if controller.latest_frame is not None and not controller.playing_video:
+            frame = cv2.resize(controller.latest_frame, (controller.frame_width, controller.frame_height))
+            status_text = "🟢 Gravando..." if controller.recording else "⏸ Parado"
+            cv2.putText(frame, status_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            cv2.imshow("Camera View", frame)
+        manual_override = controller.process_keys()
+        if manual_override is None:
+            break
+
+    cv2.destroyAllWindows()
